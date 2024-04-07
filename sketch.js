@@ -46,6 +46,19 @@ class PIDController {
   }
 }
 
+class Arm {
+  constructor() {
+    this.angle = 90;
+    this.velocity = 0;
+    this.moment = 5; // Moment of inertia
+  }
+
+  update(torque) {
+    this.velocity += torque / this.moment;
+    this.angle += this.velocity;
+  }
+}
+
 let pSliderX = 500;
 let pSliderY = 50;
 let sliderDeltaY = 75;
@@ -91,4 +104,10 @@ function generatePIDSliders() {
   iSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY, 0, 100, 0);
   dSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 2, 0, 100, 0);
   setpointSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 3, -720, 720, 0);
+}
+
+function degrees_to_radians(degrees)
+{
+  // Multiply degrees by pi divided by 180 to convert to radians.
+  return degrees * (Math.PI/180);
 }
