@@ -12,28 +12,28 @@ class PIDController {
   calculate(current, target) {
     // Calculate P output.
     let error = target - current;
-    let pOutput = kP * error;
+    let pOutput = this.kP * error;
 
     // Add the current error to our array and shift it if it is past our integrator range.
-    this.errorArray.push(error);
-    if (this.errorArray.length > this.integratorRange) {
-      this.errorArray.shift();
-    }
+    // this.errorArray.push(error);
+    // if (this.errorArray.length > this.integratorRange) {
+    //   this.errorArray.shift();
+    // }
 
     // Add together all the areas to calculate I output.
-    let errorArea = this.errorArray.reduce((total, amount) => total + amount);
-    let iOutput = kI * errorArea;
+    // let errorArea = this.errorArray.reduce((total, amount) => total + amount);
+    // let iOutput = kI * errorArea;
 
     // Calculate slope for the D output.
-    let slope;
-    if (!this.previousError) { // If this is the first time calculate is being called.
-      slope = 0;
-    } else {
-      slope =  this.previousError - error; // If error is descreasing from positive direction, positive output will be made.
-    }
-    let dOutput = kD * slope;
+    // let slope;
+    // if (!this.previousError) { // If this is the first time calculate is being called.
+    //   slope = 0;
+    // } else {
+    //   slope =  this.previousError - error; // If error is descreasing from positive direction, positive output will be made.
+    // }
+    // let dOutput = kD * slope;
 
-    return pOutput + iOutput + dOutput;
+    return pOutput;// + iOutput + dOutput;
   }
 
   updateGains(kP, kI, kD) {
@@ -50,12 +50,44 @@ class Arm {
   constructor() {
     this.angle = 90;
     this.velocity = 0;
-    this.moment = 5; // Moment of inertia
+    this.moment = 50; // Moment of inertia
+    this.xPos = 250;
+    this.yPos = 200;
+    this.width = 100;
+    this.height = 20;
   }
 
   update(torque) {
     this.velocity += torque / this.moment;
     this.angle += this.velocity;
+  }
+
+  draw() {
+    let pivot_x = -this.width / 2; let pivot_y = 0; // Coordinates relative to center of rectangle
+
+    push();
+
+    translate(this.xPos, this.yPos);
+    rotate(-this.angle);
+    translate(pivot_x, 0);
+    //stroke(255, 255, 255);
+    //fill(255, 255, 255);
+    rectMode(CENTER);
+
+    rect(0, 0, this.width, this.height);
+
+    pop();
+
+    push();
+
+    fill(255, 0, 0);
+    ellipse(this.xPos, this.yPos, this.height);
+
+    pop();
+  }
+
+  getCurrentAngle() {
+    return this.angle;
   }
 }
 
@@ -68,6 +100,7 @@ let dSlider;
 let font;
 let setpointSlider;
 let pidController;
+let arm;
 
 function preload() {
   font = loadFont('fonts/Playfair.ttf')
@@ -76,7 +109,9 @@ function preload() {
 function setup() {
   createCanvas(800, 600);
   generatePIDSliders();
-  pidController = new PIDController(0, 0, 0);
+  angleMode(DEGREES);
+  pidController = new PIDController(.01, 0, 0);
+  arm = new Arm();
 }
 
 function draw() {
@@ -84,12 +119,15 @@ function draw() {
   fill(255, 255, 255);
   textSize(20);
   textFont(font);
-  text("kP: " + round(pSlider.value(), 2), pSliderX + 3, pSliderY - 10);
-  text("kI: " + round(iSlider.value(), 2), pSliderX + 3, pSliderY + sliderDeltaY - 10);
-  text("kD: " + round(dSlider.value(), 2), pSliderX + 3, pSliderY + sliderDeltaY * 2 - 10);
+  text("kP: " + round(pSlider.value(), 4), pSliderX + 3, pSliderY - 10);
+  text("kI: " + round(iSlider.value(), 4), pSliderX + 3, pSliderY + sliderDeltaY - 10);
+  text("kD: " + round(dSlider.value(), 4), pSliderX + 3, pSliderY + sliderDeltaY * 2 - 10);
   text("Setpoint: " + round(setpointSlider.value(), 2), pSliderX + 3, pSliderY + sliderDeltaY * 3 - 10);
 
   pidController.updateGains(pSlider.value(), iSlider.value(), dSlider.value());
+  let controller_output = pidController.calculate(arm.getCurrentAngle(), -setpointSlider.value());
+  arm.update(controller_output);
+  arm.draw();
 }
 
 function configureSlider(xpos, ypos, min, max, value) {
@@ -100,14 +138,8 @@ function configureSlider(xpos, ypos, min, max, value) {
 }
 
 function generatePIDSliders() {
-  pSlider = configureSlider(pSliderX, pSliderY, 0, 100, 0);
-  iSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY, 0, 100, 0);
-  dSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 2, 0, 100, 0);
+  pSlider = configureSlider(pSliderX, pSliderY, 0, 1, 0);
+  iSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY, 0, 1, 0);
+  dSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 2, 0, 1, 0);
   setpointSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 3, -720, 720, 0);
-}
-
-function degrees_to_radians(degrees)
-{
-  // Multiply degrees by pi divided by 180 to convert to radians.
-  return degrees * (Math.PI/180);
 }
