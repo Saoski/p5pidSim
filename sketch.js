@@ -53,36 +53,56 @@ class Arm {
     this.moment = 50; // Moment of inertia
     this.xPos = 250;
     this.yPos = 200;
-    this.width = 100;
+    this.width = 150;
     this.height = 20;
+    // this.kStatic = 0.1; // Minimum required torque to move from static position
+    this.kKinetic = 10;
+    this.kViscous = 3;
+    // this.staticThreshold = 0.2; // Maximum velocity to be considered "static"
+    this.kGravity = 0.5;
   }
 
   update(torque) {
-    this.velocity += torque / this.moment;
+    torque = torque - this.kGravity * Math.cos(degreesToRadians(this.angle));
+    // Calculate friction
+    // if (Math.abs(this.velocity) < this.staticThreshold && Math.abs(torque) < this.kStatic) { // If arm is considered stationary (or close) and torque is too weak
+    //   this.velocity = 0;
+    // }
+    // text(torque < this.kStatic, 100, 100);
+    let friction = this.kKinetic * Math.sign(this.velocity) + this.kViscous * this.velocity;
+    this.velocity += torque - friction / this.moment;
     this.angle += this.velocity;
   }
 
-  draw() {
+  draw(target) {
     let pivot_x = -this.width / 2; let pivot_y = 0; // Coordinates relative to center of rectangle
 
+    // Draw simulated arm
     push();
-
     translate(this.xPos, this.yPos);
-    rotate(-this.angle);
+    rotate(-this.angle + 180);
     translate(pivot_x, 0);
-    //stroke(255, 255, 255);
-    //fill(255, 255, 255);
+    stroke(255, 255, 255);
+    fill(255, 255, 255);
     rectMode(CENTER);
-
     rect(0, 0, this.width, this.height);
-
     pop();
 
+    // Draw target ghost arm
     push();
+    translate(this.xPos, this.yPos);
+    rotate(-target + 180);
+    translate(pivot_x, 0);
+    stroke(255, 255, 255);
+    fill(255, 255, 255, 50);
+    rectMode(CENTER);
+    rect(0, 0, this.width, this.height);
+    pop();
 
+    // Draw pivot point
+    push();
     fill(255, 0, 0);
     ellipse(this.xPos, this.yPos, this.height);
-
     pop();
   }
 
@@ -125,9 +145,10 @@ function draw() {
   text("Setpoint: " + round(setpointSlider.value(), 2), pSliderX + 3, pSliderY + sliderDeltaY * 3 - 10);
 
   pidController.updateGains(pSlider.value(), iSlider.value(), dSlider.value());
-  let controller_output = pidController.calculate(arm.getCurrentAngle(), -setpointSlider.value());
+  let target = setpointSlider.value();
+  let controller_output = pidController.calculate(arm.getCurrentAngle(), target);
   arm.update(controller_output);
-  arm.draw();
+  arm.draw(target);
 }
 
 function configureSlider(xpos, ypos, min, max, value) {
@@ -141,5 +162,10 @@ function generatePIDSliders() {
   pSlider = configureSlider(pSliderX, pSliderY, 0, 1, 0);
   iSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY, 0, 1, 0);
   dSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 2, 0, 1, 0);
-  setpointSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 3, -720, 720, 0);
+  setpointSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 3, -360, 360, 0);
 }
+
+function degreesToRadians(degrees) {
+  return degrees * (Math.PI / 180);
+ }
+
