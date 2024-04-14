@@ -55,20 +55,15 @@ class Arm {
     this.yPos = 200;
     this.width = 150;
     this.height = 20;
-    // this.kStatic = 0.1; // Minimum required torque to move from static position
     this.kKinetic = 10;
     this.kViscous = 3;
-    // this.staticThreshold = 0.2; // Maximum velocity to be considered "static"
     this.kGravity = 0.5;
   }
 
   update(torque) {
     torque = torque - this.kGravity * Math.cos(degreesToRadians(this.angle));
     // Calculate friction
-    // if (Math.abs(this.velocity) < this.staticThreshold && Math.abs(torque) < this.kStatic) { // If arm is considered stationary (or close) and torque is too weak
-    //   this.velocity = 0;
-    // }
-    // text(torque < this.kStatic, 100, 100);
+
     let friction = this.kKinetic * Math.sign(this.velocity) + this.kViscous * this.velocity;
     this.velocity += torque - friction / this.moment;
     this.angle += this.velocity;
