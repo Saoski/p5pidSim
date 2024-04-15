@@ -7,11 +7,15 @@ class PIDController {
     this.currentSetpoint = 0;
     this.errorArray = [];
     this.previousError;
+    this.systemNoise = true;
   }
 
   calculate(current, target) {
     // Calculate P output.
     let error = target - current;
+    if (this.systemNoise) {
+      error += randomGaussian() / 5;
+    }
     let pOutput = this.kP * error;
 
     // Add the current error to our array and shift it if it is past our integrator range.
@@ -63,7 +67,9 @@ class Arm {
   }
 
   update(torque) {
-    torque = torque - this.kGravity * Math.cos(degreesToRadians(this.angle));
+    // Add gravity force
+    torque -= this.kGravity * Math.cos(degreesToRadians(this.angle));
+
     // Calculate friction
 
     let friction = this.kKinetic * Math.sign(this.velocity) + this.kViscous * this.velocity;
@@ -78,7 +84,7 @@ class Arm {
     push();
     translate(this.xPos, this.yPos);
     rotate(-this.angle + 180);
-    translate(pivot_x, 0);
+    translate(pivot_x, pivot_y);
     stroke(255, 255, 255);
     fill(255, 255, 255);
     rectMode(CENTER);
