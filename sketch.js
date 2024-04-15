@@ -23,19 +23,19 @@ class PIDController {
     // Add together all the areas to calculate I output.
     let errorArea = this.errorArray.reduce((total, amount) => total + amount);
     let iOutput = this.kI * errorArea;
-    text(iOutput, 100, 100);
-    text(this.kI, 100, 150);
 
     // Calculate slope for the D output.
-    // let slope;
-    // if (!this.previousError) { // If this is the first time calculate is being called.
-    //   slope = 0;
-    // } else {
-    //   slope =  this.previousError - error; // If error is descreasing from positive direction, positive output will be made.
-    // }
-    // let dOutput = kD * slope;
+    let slope;
+    if (!this.previousError) { // If this is the first time calculate is being called.
+      slope = 0;
+    } else {
+      slope =  error - this.previousError; // If error is descreasing from positive direction, positive output will be made.
+    }
+    let dOutput = this.kD * slope;
+    this.previousError = error;
+    text(dOutput, 100, 100);
 
-    return pOutput + iOutput; // + dOutput;
+    return pOutput + iOutput + dOutput;
   }
 
   updateGains(kP, kI, kD) {
