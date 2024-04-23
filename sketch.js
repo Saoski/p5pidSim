@@ -8,21 +8,23 @@ class PIDController {
     this.errorArray = [];
     this.previousError;
     this.systemNoise = true;
+    this.isIntegratorResetting = false;
   }
 
   calculate(current, target) {
-    // Calculate P output.
+    // Calculate P outpuT
     let error = target - current;
     if (this.systemNoise) {
       error += randomGaussian() / 5;
     }
     let pOutput = this.kP * error;
 
-    // Add the current error to our array and shift it if it is past our integrator range.
+    // Add the current error to our array and shift it if it is past our integrator range
     this.errorArray.push(error);
     if (this.errorArray.length > this.integratorRange) {
       this.errorArray.shift();
     }
+    text(this.errorArray.length, 100, 100);
 
     // Add together all the areas to calculate I output.
     let errorArea = this.errorArray.reduce((total, amount) => total + amount);
@@ -30,14 +32,13 @@ class PIDController {
 
     // Calculate slope for the D output.
     let slope;
-    if (!this.previousError) { // If this is the first time calculate is being called.
+    if (!this.previousError) { // If this is the first time calculate is being called
       slope = 0;
     } else {
       slope =  error - this.previousError; // If error is descreasing from positive direction, positive output will be made.
     }
     let dOutput = this.kD * slope;
     this.previousError = error;
-    text(dOutput, 100, 100);
 
     return pOutput + iOutput + dOutput;
   }
@@ -124,6 +125,7 @@ let font;
 let setpointSlider;
 let pidController;
 let arm;
+let integratorButton;
 
 function preload() {
   font = loadFont('fonts/Playfair.ttf')
@@ -135,6 +137,8 @@ function setup() {
   angleMode(DEGREES);
   pidController = new PIDController(0, 0, 0);
   arm = new Arm();
+  integratorButton = createButton("Reset Integrator");
+  integratorButton.mouseClicked(() => {pidController.errorArray = []});
 }
 
 function draw() {
@@ -163,7 +167,7 @@ function configureSlider(xpos, ypos, min, max, value) {
 
 function generatePIDSliders() {
   pSlider = configureSlider(pSliderX, pSliderY, 0, 1, 0);
-  iSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY, 0, .001, 0);
+  iSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY, 0, .0015, 0);
   dSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 2, 0, 1, 0);
   setpointSlider = configureSlider(pSliderX, pSliderY + sliderDeltaY * 3, -360, 360, 0);
 }
